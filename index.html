@@ -1,104 +1,413 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>To-Do List</title>
+    <title>To-Do List - Update</title>
     <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
         body {
-            font-family: Arial, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 20px;
+            color: #333;
         }
-        #todoList {
-            border-collapse: collapse;
-            width: 70%;
+        .container {
+            max-width: 800px;
             margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            padding: 30px;
         }
-        #todoList th, #todoList td {
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .auth-section, .main-section {
+            display: none;
+        }
+        .active-section {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
             border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
+            border-radius: 5px;
+            font-size: 16px;
         }
-        #todoList th {
-            background-color: #f0f0f0;
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            transition: background-color 0.3s;
         }
-        #todoList th:first-child, #todoList th:last-child {
-            width: 5%;
+        button:hover {
+            background-color: #2980b9;
         }
-        #todoList th:nth-child(2) {
-            width: 90%;
+        .btn-secondary {
+            background-color: #95a5a6;
         }
-        .add-form {
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+        }
+        .update-btn {
+            background-color: #2ecc71;
+            padding: 5px 10px;
+            width: auto;
+            margin-right: 5px;
+        }
+        .update-btn:hover {
+            background-color: #27ae60;
+        }
+        .cancel-btn {
+            background-color: #95a5a6;
+            padding: 5px 10px;
+            width: auto;
+        }
+        .cancel-btn:hover {
+            background-color: #7f8c8d;
+        }
+        .error {
+            color: #e74c3c;
+            margin-top: 5px;
+        }
+        .tasks-container {
+            margin-top: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
             margin-top: 20px;
-            width: 70%;
-            margin: 20px auto;
         }
-        .add-form input[type="text"] {
-            padding: 8px;
-            width: 70%;
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
         }
-        .add-form button {
-            padding: 8px;
-            width: 20%;
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            h1 {
+                font-size: 24px;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="container">
+        <header>
+            <h1>To-Do List - Update</h1>
+            <p>Добавление и изменение задач</p>
+        </header>
 
-<h2 style="text-align: center;">To-Do List</h2>
+        <div id="authSection" class="auth-section active-section">
+            <div class="form-group">
+                <label for="username">Имя пользователя</label>
+                <input type="text" id="username" placeholder="Введите имя пользователя">
+            </div>
+            <div class="form-group">
+                <label for="password">Пароль</label>
+                <input type="password" id="password" placeholder="Введите пароль">
+            </div>
+            <div id="authError" class="error"></div>
+            <button id="loginBtn">Войти</button>
+            <button id="registerBtn" class="btn-secondary">Зарегистрироваться</button>
+        </div>
 
-<table id="todoList">
-    <thead>
-        <tr>
-            <th>Number</th>
-            <th>Text</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody id="listBody">
-        {{rows}}
-    </tbody>
-</table>
+        <div id="mainSection" class="main-section">
+            <div class="form-group">
+                <input type="text" id="newTask" placeholder="Добавить новую задачу...">
+                <button id="addTaskBtn">Добавить</button>
+            </div>
 
-<div class="add-form">
-    <input type="text" id="newItem" placeholder="Enter new item">
-    <button onclick="addItem()">Add</button>
-</div>
+            <div class="tasks-container">
+                <table id="tasksTable">
+                    <thead>
+                        <tr>
+                            <th>Задача</th>
+                            <th>Действие</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tasksBody"></tbody>
+                </table>
+            </div>
+            <button id="logoutBtn" class="btn-secondary">Выйти</button>
+        </div>
+    </div>
 
-<script>
-    let items = [];
-    let nextId = 1;
+    <script>
+        const authSection = document.getElementById('authSection');
+        const mainSection = document.getElementById('mainSection');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const authError = document.getElementById('authError');
+        const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const newTaskInput = document.getElementById('newTask');
+        const addTaskBtn = document.getElementById('addTaskBtn');
+        const tasksBody = document.getElementById('tasksBody');
 
-    function renderList() {
-        const listBody = document.getElementById('listBody');
-        listBody.innerHTML = '';
-
-        items.forEach((item, index) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${index + 1}</td>
-                <td>${item.text}</td>
-                <td><button onclick="removeItem(${index})">Remove</button></td>
-            `;
-            listBody.appendChild(row);
+        let authToken = null;
+        let userId = null;
+        let username = null;
+        let editingTaskId = null;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            const savedUsername = localStorage.getItem('username');
+            
+            if (token && savedUsername) {
+                authToken = token;
+                username = savedUsername;
+                showMainSection();
+                loadTasks();
+            }
         });
-    }
 
-    function addItem() {
-        const newItemInput = document.getElementById('newItem');
-        const newItemText = newItemInput.value.trim();
+        loginBtn.addEventListener('click', login);
+        registerBtn.addEventListener('click', register);
+        logoutBtn.addEventListener('click', logout);
+        addTaskBtn.addEventListener('click', addTask);
+        newTaskInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addTask();
+        });
 
-        if (newItemText) {
-            items.push({ id: nextId++, text: newItemText });
-            newItemInput.value = '';
-            renderList();
+        async function login() {
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+            
+            if (!username || !password) {
+                showError('Заполните все поля');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.token;
+                    localStorage.setItem('token', authToken);
+                    localStorage.setItem('username', username);
+                    this.username = username;
+                    showMainSection();
+                    loadTasks();
+                } else {
+                    showError('Неверные учетные данные');
+                }
+            } catch (error) {
+                showError('Ошибка сети');
+            }
         }
-    }
 
-    function removeItem(index) {
-        items.splice(index, 1);
-        renderList();
-    }
-</script>
+        async function register() {
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+            
+            if (!username || !password) {
+                showError('Заполните все поля');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showError('Пароль должен быть не менее 6 символов');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                if (response.status === 201) {
+                    showError('Регистрация успешна! Войдите в систему', false);
+                } else {
+                    const errorData = await response.json();
+                    showError(errorData.error || 'Ошибка регистрации');
+                }
+            } catch (error) {
+                showError('Ошибка сети');
+            }
+        }
 
+        function logout() {
+            authToken = null;
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            showAuthSection();
+        }
+
+        async function addTask() {
+            const text = newTaskInput.value.trim();
+            if (!text) return;
+            
+            try {
+                const response = await fetch('/tasks', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ text })
+                });
+                
+                if (response.ok) {
+                    newTaskInput.value = '';
+                    loadTasks();
+                }
+            } catch (error) {
+                console.error('Ошибка добавления задачи:', error);
+            }
+        }
+
+        async function updateTask(taskId, newText) {
+            try {
+                await fetch(`/tasks/${taskId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ text: newText })
+                });
+                loadTasks();
+            } catch (error) {
+                console.error('Ошибка обновления задачи:', error);
+            }
+        }
+
+        async function loadTasks() {
+            try {
+                const response = await fetch('/tasks', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const tasks = await response.json();
+                    renderTasks(tasks);
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки задач:', error);
+            }
+        }
+
+        function renderTasks(tasks) {
+            tasksBody.innerHTML = '';
+            
+            tasks.forEach(task => {
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${task.text}</td>
+                    <td>
+                        <button class="update-btn" data-id="${task.id}">Изменить</button>
+                    </td>
+                `;
+                
+                tasksBody.appendChild(row);
+            });
+            
+            document.querySelectorAll('.update-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const taskId = btn.dataset.id;
+                    const taskRow = btn.closest('tr');
+                    const taskText = taskRow.querySelector('td:first-child').textContent;
+                    
+                    editingTaskId = taskId;
+                    
+                    taskRow.innerHTML = `
+                        <td>
+                            <input type="text" class="edit-task-input" value="${taskText}">
+                        </td>
+                        <td>
+                            <button class="update-btn save-btn">Сохранить</button>
+                            <button class="cancel-btn">Отмена</button>
+                        </td>
+                    `;
+                    
+                    const saveBtn = taskRow.querySelector('.save-btn');
+                    const cancelBtn = taskRow.querySelector('.cancel-btn');
+                    const editInput = taskRow.querySelector('.edit-task-input');
+                    
+                    saveBtn.addEventListener('click', () => {
+                        const newText = editInput.value.trim();
+                        if (newText) {
+                            updateTask(taskId, newText);
+                        }
+                    });
+                    
+                    cancelBtn.addEventListener('click', () => {
+                        loadTasks();
+                    });
+                    
+                    editInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            const newText = editInput.value.trim();
+                            if (newText) {
+                                updateTask(taskId, newText);
+                            }
+                        }
+                    });
+                });
+            });
+        }
+
+        function showAuthSection() {
+            authSection.classList.add('active-section');
+            mainSection.classList.remove('active-section');
+            usernameInput.value = '';
+            passwordInput.value = '';
+            authError.textContent = '';
+        }
+
+        function showMainSection() {
+            authSection.classList.remove('active-section');
+            mainSection.classList.add('active-section');
+        }
+
+        function showError(message, isError = true) {
+            authError.textContent = message;
+            authError.style.color = isError ? '#e74c3c' : '#27ae60';
+        }
+    </script>
 </body>
 </html>
